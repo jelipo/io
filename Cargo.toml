@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-nix = { version = "0.28", features = ["poll"] }
+nix = { version = "0.28", features = ["poll", "aio", "fs", "event"] }
 anyhow = "1.0"
+io-uring = "0.6"
+libc = { version = "0.2", features = ["default", "const-extern-fn"] }

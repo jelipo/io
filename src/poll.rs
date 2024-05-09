@@ -1,6 +1,6 @@
 use std::io::Read;
-use std::net::TcpListener;
-use std::os::fd::AsFd;
+use std::net::{TcpListener, TcpStream};
+use std::os::fd::{AsFd, AsRawFd, FromRawFd};
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -12,7 +12,7 @@ pub fn my_poll(addr: &str) -> Result<()> {
     let (mut stream, _) = listener.accept()?;
     let stream_clone = stream.try_clone()?;
     let fd = stream_clone.as_fd();
-    
+
     loop {
         // 这里的sleep，假装自己去处理别的数据了，不阻塞等着网络
         sleep(Duration::from_secs(1));
@@ -29,8 +29,10 @@ pub fn my_poll(addr: &str) -> Result<()> {
         // 遍历fd数组，查看哪个有数据
         for poll_fd in &poll_fds {
             if poll_fd.revents().unwrap().contains(PollFlags::POLLIN) {
+                // 根据fd恢复对应的TCP
+                let mut stream_new = unsafe { TcpStream::from_raw_fd(poll_fd.as_fd().as_raw_fd()) };
                 let mut buffer = [0; 1024];
-                match stream.read(&mut buffer) {
+                match stream_new.read(&mut buffer) {
                     Ok(0) => {
                         println!("连接关闭");
                         break;
